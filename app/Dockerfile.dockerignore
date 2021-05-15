@@ -1,0 +1,12 @@
+app/protos/hello_pb2_grpc.py
+app/protos/hello_pb2.py
+
+# Byte-compiled / optimized / DLL files
+**/.git/
+**/.gitignore
+**/.vscode/
+**/.idea/
+**/.github/
+**/__pycache__/
+**/*.py[cod]
+**/*.log

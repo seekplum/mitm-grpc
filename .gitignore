@@ -1,0 +1,16 @@
+__pycache___
+.idea
+.vscode
+.DS_Store
+*.pyc
+*.log
+test.py
+test.txt
+test.conf
+mygrpc/keys/key.pem
+mygrpc/keys/cert.pem
+mygrpc/keys/mitm.pem
+app/protos/hello_pb2.py
+app/protos/hello_pb2_grpc.py
+go-client/protos/hello.pb.go
+go-client/app

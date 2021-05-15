@@ -1,0 +1,80 @@
+version: "2"
+
+services:
+  python:
+    image: mitm-grpc-python:test
+    build:
+      context: ..
+      dockerfile: app/Dockerfile
+
+  go:
+    image: mitm-grpc-go:test
+    build:
+      context: ..
+      dockerfile: go-client/Dockerfile
+
+  web:
+    extends: python
+
+  grpc-server:
+    extends: python
+    command: python app/protos/hello_server.py
+
+  python-client:
+    extends: python
+    command: python app/protos/hello_client.py
+    environment:
+      - CHANNEL_SERVER_TARGET=nginx:80
+      - GRPC_VERBOSITY=error
+      - GRPC_TRACE=tcp,http,api
+    depends_on:
+      - nginx
+
+  go-client:
+    extends: go
+    environment:
+      - GODEBUG="x509ignoreCN=0"
+      - CHANNEL_SERVER_TARGET=nginx:80
+      - GRPC_VERBOSITY=error
+      - GRPC_TRACE=tcp,http,api
+    depends_on:
+      - nginx
+
+  nginx:
+    image: nginx:alpine
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./nginx/proxy_params:/etc/nginx/proxy_params
+      - ./nginx/extras:/etc/nginx/extras
+      - ../mygrpc/keys/key.pem:/etc/nginx/certs/key.pem
+      - ../mygrpc/keys/cert.pem:/etc/nginx/certs/cert.pem
+    ports:
+      - 8081:80
+    depends_on:
+      - web
+      - grpc-server
+    restart: on-failure
+
+  mitmdump:
+    image: mitmproxy/mitmproxy
+    volumes:
+      - ./proxy_rewrite.py:/home/mitmproxy/custom/proxy_rewrite.py
+      - ../mygrpc/keys/cert.pem:/home/mitmproxy/custom/cert.pem
+    working_dir: /home/mitmproxy
+    command: >-
+      mitmdump
+      --listen-port 8080
+      --scripts custom/proxy_rewrite.py
+      --rawtcp
+      --tcp-hosts .*
+      --ssl-insecure
+      --flow-detail 3
+      --http2
+      --set http2_priority=true
+      --set client_certs=custom/cert.pem
+    mem_limit: "192m"
+    restart: on-failure
+    ports:
+      - 8080:8080
+    depends_on:
+      - nginx

@@ -1,0 +1,12 @@
+go-client/protos/hello.pb.go
+go-client/app
+
+# Byte-compiled / optimized / DLL files
+**/.git/
+**/.gitignore
+**/.vscode/
+**/.idea/
+**/.github/
+**/__pycache__/
+**/*.py[cod]
+**/*.log
