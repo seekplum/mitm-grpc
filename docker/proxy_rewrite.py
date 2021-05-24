@@ -15,8 +15,8 @@ def tcp_message(flow: tcp.TCPFlow):
         "server_conn.address": server_conn.address,
         "server_conn": server_conn,
     }
-    if server_conn.address == ("mitmdump", 8080):
-        server_conn.address = ("nginx", 80)
+    if server_conn.address in [("mitmdump", 8080), ("127.0.0.1", "8080")]:
+        server_conn.address = ("127.0.0.1", 80)
         content = strutils.bytes_to_escaped_str(message.content)
         extra_data.update(content=content)
         ctx.log.info(f"{flag} tcp_message: {extra_data} {flag}")
@@ -38,7 +38,7 @@ def http_connect(flow: http.HTTPFlow) -> None:
         "data": r.data,
     }
     if is_grpc_request:
-        r.host, r.port = "grpc.seekplum.top", 80
+        r.host = "grpc.seekplum.top"
         ctx.log.info(f"{flag} http_connect: {extra_data} {flag}")
 
 
@@ -48,10 +48,10 @@ def request(flow: http.HTTPFlow) -> None:
     flag: str = "#" * 10
     ctx.log.info(f"{flag} request host: {host} {flag}")
     if host in ["web.seekplum.top"]:
-        r.host, r.port = "web", 8084
+        r.host, r.port = "127.0.0.1", 8088
         r.headers["Host"] = host
         return
-    if host in ["mitmdump", "nginx"]:
-        r.host, r.port = "nginx", 80
+    if host in ["mitmdump", "nginx", "grpc.seekplum.top"]:
+        r.host, r.port = "127.0.0.1", 80
         r.headers["Host"] = "grpc.seekplum.top"
         return

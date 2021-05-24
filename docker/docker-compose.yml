@@ -1,6 +1,25 @@
 version: "2"
 
 services:
+  base:
+    image: busybox
+    command: "/bin/sh -c -- 'trap : INT TERM; sleep 999999d & wait || :'"
+    extra_hosts:
+      # services
+      - "web:127.0.0.1"
+      - "grpc-server:127.0.0.1"
+      - "nginx:127.0.0.1"
+      - "mitmdump:127.0.0.1"
+      # hosts
+      - "web.seekplum.top:127.0.0.1"
+      - "grpc.seekplum.top:127.0.0.1"
+    ports:
+      # external -> proxy
+      - 8080:8080
+      - 8081:8088
+      - 8082:80
+    restart: on-failure
+
   python:
     image: mitm-grpc-python:test
     build:
@@ -15,13 +34,16 @@ services:
 
   web:
     extends: python
+    network_mode: service:base
 
   grpc-server:
     extends: python
+    network_mode: service:base
     command: python app/protos/hello_server.py
 
   python-client:
     extends: python
+    network_mode: service:base
     command: python app/protos/hello_client.py
     environment:
       - CHANNEL_SERVER_TARGET=nginx:80
@@ -33,26 +55,26 @@ services:
 
   go-client:
     extends: go
+    network_mode: service:base
     environment:
       - CHANNEL_SERVER_TARGET=nginx:80
       - CHANNEL_SERVER_SECURE=tls
       - GODEBUG="x509ignoreCN=0"
       - GRPC_VERBOSITY=error
       - GRPC_TRACE=tcp,http,api
+      # - HTTP_PROXY=127.0.0.1:8080
     depends_on:
       - nginx
 
   nginx:
     image: nginx:alpine
+    network_mode: service:base
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf
       - ./nginx/proxy_params:/etc/nginx/proxy_params
       - ./nginx/extras:/etc/nginx/extras
       - ../mygrpc/keys/key.pem:/etc/nginx/certs/key.pem
       - ../mygrpc/keys/cert.pem:/etc/nginx/certs/cert.pem
-    ports:
-      - 8081:8088
-      - 8082:80
     depends_on:
       - web
       - grpc-server
@@ -60,6 +82,7 @@ services:
 
   mitmdump:
     image: mitmproxy/mitmproxy
+    network_mode: service:base
     volumes:
       - ./proxy_rewrite.py:/home/mitmproxy/custom/proxy_rewrite.py
       - ../mygrpc/keys/cert.pem:/home/mitmproxy/custom/cert.pem
@@ -75,9 +98,8 @@ services:
       --http2
       --set http2_priority=true
       --set client_certs=custom/cert.pem
+    # --set relax_http_form_validation=true
     mem_limit: "192m"
     restart: on-failure
-    ports:
-      - 8080:8080
     depends_on:
       - nginx
