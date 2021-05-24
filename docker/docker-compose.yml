@@ -49,7 +49,8 @@ services:
       - ../mygrpc/keys/key.pem:/etc/nginx/certs/key.pem
       - ../mygrpc/keys/cert.pem:/etc/nginx/certs/cert.pem
     ports:
-      - 8081:80
+      - 8081:8088
+      - 8082:80
     depends_on:
       - web
       - grpc-server
