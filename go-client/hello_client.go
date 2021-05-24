@@ -45,7 +45,8 @@ func tls_client(target string) {
 
 func normal_client(target string) {
     // 连接服务器
-    conn, err := grpc.Dial(target, grpc.WithInsecure())
+    // conn, err := grpc.Dial(target, grpc.WithInsecure())
+    conn, err := grpc.DialContext(context.TODO(), target, grpc.WithInsecure())
     if err != nil {
         log.Printf("连接服务端失败: %s", err)
         return
@@ -63,9 +64,9 @@ func normal_client(target string) {
 }
 
 func main(){
-    target := getEnv("CHANNEL_SERVER_TARGET", "0.0.0.0:8085")
+    target := getEnv("CHANNEL_SERVER_TARGET", "0.0.0.0:8086")
     is_secure := false
-    if getEnv("CHANNEL_SERVER_SECURE", "") == "tls" {
+    if getEnv("CHANNEL_SERVER_SECURE", "tls") == "tls" {
         is_secure = true
     }
     if is_secure {

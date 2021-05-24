@@ -34,8 +34,8 @@ def get_channel(target: str, is_secure: bool = True) -> grpc.Channel:
 
 
 def main() -> None:
-    target = os.getenv("CHANNEL_SERVER_TARGET", "0.0.0.0:8085")
-    is_secure = os.getenv("CHANNEL_SERVER_SECURE", "") == "tls"
+    target = os.getenv("CHANNEL_SERVER_TARGET", "0.0.0.0:8086")
+    is_secure = os.getenv("CHANNEL_SERVER_SECURE", "tls") == "tls"
     channel = get_channel(
         target=target,
         is_secure=is_secure,
