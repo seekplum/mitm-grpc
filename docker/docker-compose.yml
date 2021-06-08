@@ -11,13 +11,13 @@ services:
       - "nginx:127.0.0.1"
       - "mitmdump:127.0.0.1"
       # hosts
-      - "web.seekplum.top:127.0.0.1"
-      - "grpc.seekplum.top:127.0.0.1"
+      # - "web.seekplum.top:127.0.0.1"
+      # - "grpc.seekplum.top:127.0.0.1"
     ports:
       # external -> proxy
       - 8080:8080
-      - 8081:8088
-      - 8082:80
+      # - 8081:8088
+      # - 8082:80
     restart: on-failure
 
   python:
@@ -46,10 +46,11 @@ services:
     network_mode: service:base
     command: python app/protos/hello_client.py
     environment:
-      - CHANNEL_SERVER_TARGET=nginx:80
+      - CHANNEL_SERVER_TARGET=127.0.0.1:8080
       - CHANNEL_SERVER_SECURE=tls
       - GRPC_VERBOSITY=error
       - GRPC_TRACE=tcp,http,api
+      - http_proxy=http://127.0.0.1:8080
     depends_on:
       - nginx
 
@@ -85,7 +86,7 @@ services:
     network_mode: service:base
     volumes:
       - ./proxy_rewrite.py:/home/mitmproxy/custom/proxy_rewrite.py
-      - ../mygrpc/keys/cert.pem:/home/mitmproxy/custom/cert.pem
+      - ../mygrpc/keys/mitm.pem:/home/mitmproxy/custom/mitm.pem
     working_dir: /home/mitmproxy
     command: >-
       mitmdump
@@ -94,11 +95,14 @@ services:
       --rawtcp
       --tcp-hosts .*
       --ssl-insecure
-      --flow-detail 3
+      -v --flow-detail 3
       --http2
       --set http2_priority=true
-      --set client_certs=custom/cert.pem
-    # --set relax_http_form_validation=true
+      --set upstream_cert=false
+      --set relax_http_form_validation=true
+      --set view_order_reversed=true
+      --set client_certs=custom/mitm.pem
+      --certs grpc.seekplum.top=custom/mitm.pem
     mem_limit: "192m"
     restart: on-failure
     depends_on:
